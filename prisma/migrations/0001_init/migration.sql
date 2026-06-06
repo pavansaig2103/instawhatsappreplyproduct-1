@@ -10,6 +10,9 @@ CREATE TABLE "Business" (
   "staffNotificationPhone" TEXT NOT NULL DEFAULT '',
   "staffNotificationEmail" TEXT NOT NULL DEFAULT '',
   "aiTone" TEXT NOT NULL DEFAULT 'Friendly and concise',
+  "instagramPageId" TEXT NOT NULL DEFAULT '',
+  "instagramAccessToken" TEXT NOT NULL DEFAULT '',
+  "instagramConnected" BOOLEAN NOT NULL DEFAULT false,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updatedAt" TIMESTAMP(3) NOT NULL,
 

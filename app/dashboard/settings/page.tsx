@@ -27,7 +27,10 @@ export default async function SettingsPage() {
           pricingNotes: business.pricingNotes,
           staffNotificationPhone: business.staffNotificationPhone,
           staffNotificationEmail: business.staffNotificationEmail,
-          aiTone: business.aiTone
+          aiTone: business.aiTone,
+          instagramPageId: business.instagramPageId,
+          instagramAccessToken: business.instagramAccessToken,
+          instagramConnected: business.instagramConnected
         }}
       />
 
@@ -39,7 +42,7 @@ export default async function SettingsPage() {
           <div>
             <h2 className="font-semibold text-white">Integration status</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Instagram and WhatsApp are still demo channels. No real external APIs, credentials, or webhooks are connected yet.
+              Instagram webhooks can be connected from this page. WhatsApp remains a demo channel for now.
             </p>
           </div>
         </div>

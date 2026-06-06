@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Save } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Toast } from "@/components/ui/Toast";
 
@@ -17,14 +18,19 @@ type BusinessSettings = {
   staffNotificationPhone: string;
   staffNotificationEmail: string;
   aiTone: string;
+  instagramPageId: string;
+  instagramAccessToken: string;
+  instagramConnected: boolean;
 };
 
 type BusinessSettingsFormProps = {
   business: BusinessSettings;
 };
 
+type EditableBusinessSetting = Exclude<keyof BusinessSettings, "instagramConnected">;
+
 const fields: Array<{
-  key: keyof BusinessSettings;
+  key: EditableBusinessSetting;
   label: string;
   type?: "input" | "textarea";
   required?: boolean;
@@ -52,7 +58,7 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
     window.setTimeout(() => setToast(null), 3200);
   }
 
-  function updateField(key: keyof BusinessSettings, value: string) {
+  function updateField(key: EditableBusinessSetting, value: string) {
     setForm((current) => ({
       ...current,
       [key]: value
@@ -118,6 +124,41 @@ export function BusinessSettingsForm({ business }: BusinessSettingsFormProps) {
               )}
             </label>
           ))}
+        </div>
+
+        <div className="space-y-4 border-t border-white/10 pt-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-white">Instagram connection</h2>
+              <p className="mt-1 text-sm text-slate-400">Connect the Instagram Page that should receive real DM replies.</p>
+            </div>
+            <Badge tone={form.instagramConnected ? "green" : "slate"}>
+              {form.instagramConnected ? "Connected" : "Not connected"}
+            </Badge>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <label className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Instagram Page ID</span>
+              <input
+                value={form.instagramPageId}
+                onChange={(event) => updateField("instagramPageId", event.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-ink-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-brand-500"
+                placeholder="17841400000000000"
+              />
+            </label>
+
+            <label className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Instagram Access Token</span>
+              <input
+                type="password"
+                value={form.instagramAccessToken}
+                onChange={(event) => updateField("instagramAccessToken", event.target.value)}
+                className="w-full rounded-lg border border-white/10 bg-ink-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-brand-500"
+                placeholder="Paste Meta page access token"
+              />
+            </label>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
