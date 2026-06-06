@@ -132,12 +132,11 @@ export async function ensureDemoBusinesses() {
 }
 
 export async function getSelectedBusiness(slug?: string) {
-  await ensureDemoBusinesses();
-
   const demoBusiness = getDemoBusiness(slug);
-  const business = await prisma.business.findUniqueOrThrow({
+  const existingBusiness = await prisma.business.findUnique({
     where: { instagramHandle: demoBusiness.handle }
   });
+  const business = existingBusiness ?? (await createMissingDemoBusiness(demoBusiness));
 
   return {
     ...business,
@@ -148,4 +147,12 @@ export async function getSelectedBusiness(slug?: string) {
 
 export async function getOrCreateWorkspace() {
   return getSelectedBusiness();
+}
+
+async function createMissingDemoBusiness(demoBusiness: (typeof DEMO_BUSINESSES)[number]) {
+  await ensureDemoBusinesses();
+
+  return prisma.business.findUniqueOrThrow({
+    where: { instagramHandle: demoBusiness.handle }
+  });
 }

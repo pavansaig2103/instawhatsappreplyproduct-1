@@ -5,8 +5,6 @@ import { ensureDemoBusinesses } from "@/lib/db/business";
 import { prisma } from "@/lib/db/prisma";
 
 export async function POST(request: Request) {
-  await ensureDemoBusinesses();
-
   const body = (await request.json()) as {
     email?: string;
     password?: string;
@@ -18,10 +16,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
+  let user = await prisma.user.findUnique({
     where: { email },
     include: { business: true }
   });
+
+  if (!user) {
+    await ensureDemoBusinesses();
+    user = await prisma.user.findUnique({
+      where: { email },
+      include: { business: true }
+    });
+  }
 
   if (!user || !verifyPassword(password, user.password)) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
