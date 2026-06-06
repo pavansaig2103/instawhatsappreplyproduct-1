@@ -107,18 +107,67 @@ function looksLikeQuestion(text: string) {
   );
 }
 
-function isValidName(text: string) {
-  const trimmed = text.trim();
-  const normalized = normalizeText(trimmed);
-  const blockedWords = ["price", "pricing", "timing", "timings", "trial", "trainer", "location", "membership", "appointment"];
+function titleCaseName(text: string) {
+  return text
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
-  return (
-    /^[a-zA-Z][a-zA-Z .'-]{1,58}$/.test(trimmed) &&
-    trimmed.split(/\s+/).length >= 2 &&
-    !looksLikeQuestion(trimmed) &&
-    !isGreeting(trimmed) &&
-    !blockedWords.some((word) => normalized.split(" ").includes(word))
-  );
+function extractName(text: string): { name: string | null; reason?: string } {
+  const trimmed = text.trim();
+
+  if (!trimmed) {
+    return { name: null, reason: "empty text" };
+  }
+
+  if (/\d/.test(trimmed)) {
+    return { name: null, reason: "contains phone number or digits" };
+  }
+
+  if (looksLikeQuestion(trimmed)) {
+    return { name: null, reason: "looks like a question" };
+  }
+
+  let candidate = trimmed
+    .replace(/^name\s*:\s*/i, "")
+    .replace(/^my\s+name\s+is\s+/i, "")
+    .replace(/^i\s+am\s+/i, "")
+    .replace(/^i'm\s+/i, "")
+    .replace(/^im\s+/i, "")
+    .trim();
+
+  candidate = candidate.replace(/\s+/g, " ");
+  const normalized = normalizeText(trimmed);
+  const normalizedCandidate = normalizeText(candidate);
+  const blockedWords = ["price", "pricing", "timing", "timings", "location", "trial", "appointment"];
+
+  if (isGreeting(candidate)) {
+    return { name: null, reason: "greeting is not a name" };
+  }
+
+  if (blockedWords.includes(normalized) || blockedWords.includes(normalizedCandidate)) {
+    return { name: null, reason: "FAQ keyword alone is not a name" };
+  }
+
+  if (!/^[a-zA-Z][a-zA-Z .'-]{1,58}$/.test(candidate)) {
+    return { name: null, reason: "name has unsupported characters or length" };
+  }
+
+  const words = candidate.split(/\s+/).filter(Boolean);
+
+  if (words.length > 3) {
+    return { name: null, reason: "name has too many words" };
+  }
+
+  if (words.some((word) => word.replace(/[^a-zA-Z]/g, "").length < 2)) {
+    return { name: null, reason: "name word is too short" };
+  }
+
+  return { name: titleCaseName(candidate) };
 }
 
 function isValidPhone(text: string) {
@@ -423,6 +472,7 @@ export async function processInboundMessage(input: ProcessInboundMessageInput): 
 
   if (isDevelopment) {
     console.log("[Inbound Message] FAQ matched", Boolean(faqAnswer));
+    console.log("[Inbound Message] Current lead state", conversation.leadState);
   }
 
   if (isGreeting(inboundText) && !waitingForName && conversation.leadState !== LeadCaptureState.AWAITING_PHONE) {
@@ -462,8 +512,17 @@ export async function processInboundMessage(input: ProcessInboundMessageInput): 
       nextConversationStatus = ConversationStatus.WAITING_HUMAN;
     }
   } else if (waitingForName) {
-    if (isValidName(inboundText)) {
-      leadUpdate.name = inboundText;
+    const extractedName = extractName(inboundText);
+
+    if (isDevelopment) {
+      console.log("[Inbound Message] Extracted name", extractedName.name);
+      if (!extractedName.name) {
+        console.log("[Inbound Message] Name rejected", extractedName.reason);
+      }
+    }
+
+    if (extractedName.name) {
+      leadUpdate.name = extractedName.name;
       leadUpdate.status = LeadStatus.WARM;
       reply = ASK_PHONE_REPLY;
       nextLeadState = nextState(conversation.leadState);
