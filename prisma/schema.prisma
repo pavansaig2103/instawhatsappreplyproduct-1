@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Enum values are stored as strings to preserve the existing application data shape.
+// Typed enum constants live in lib/db/enums.ts:
+// ConversationStatus: ACTIVE, WAITING_HUMAN, RESOLVED
+// Direction: INBOUND, OUTBOUND
+// Channel: INSTAGRAM, WHATSAPP
+// ReplyType: FAQ_MATCH, AI_REPLY, HANDOFF, LEAD_CAPTURE, HUMAN
+// LeadStatus: NEW, WARM, HOT, ESCALATED, RESOLVED
+// LeadCaptureState: AWAITING_NAME, AWAITING_PHONE, AWAITING_SERVICE, COMPLETE
+// NotificationStatus: SENT, FAILED, PENDING
+
+model Business {
+  id              String         @id @default(cuid())
+  name            String
+  instagramHandle String         @unique
+  businessType    String         @default("")
+  location        String         @default("")
+  timings         String         @default("")
+  services        String         @default("")
+  pricingNotes    String         @default("")
+  staffNotificationPhone String  @default("")
+  staffNotificationEmail String  @default("")
+  aiTone          String         @default("Friendly and concise")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  users           User[]
+  faqs            FAQ[]
+  conversations   Conversation[]
+  leads           Lead[]
+  notifications   Notification[]
+}
+
+model User {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  email      String   @unique
+  password   String   @default("")
+  role       String   @default("OWNER")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model FAQ {
+  id         String   @id @default(cuid())
+  businessId String
+  question   String
+  answer     String
+  usageCount Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id              String             @id @default(cuid())
+  businessId      String
+  leadId          String?
+  contactName     String
+  instagramHandle String
+  channel         String             @default("INSTAGRAM")
+  status          String             @default("ACTIVE")
+  leadState       String             @default("AWAITING_NAME")
+  noMatchCount    Int                @default(0)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  business        Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  lead            Lead?              @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  messages        Message[]
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  direction      String
+  channel        String       @default("INSTAGRAM")
+  replyType      String
+  content        String
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id              String         @id @default(cuid())
+  businessId      String
+  name            String
+  phone           String?
+  serviceInterest String?
+  instagramHandle String
+  intent          String
+  status          String         @default("NEW")
+  valueCents      Int            @default(0)
+  lastSeenAt      DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  business        Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  conversations   Conversation[]
+  notifications   Notification[]
+
+  @@unique([businessId, instagramHandle])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  businessId String
+  leadId     String
+  channel    String
+  title      String
+  message    String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  lead       Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, title])
+}
