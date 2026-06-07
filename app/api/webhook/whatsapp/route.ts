@@ -33,14 +33,17 @@ type WhatsAppWebhookPayload = {
   }>;
 };
 
+const DEFAULT_WHATSAPP_VERIFY_TOKEN = "aerocore_whatsapp_product1";
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const mode = url.searchParams.get("hub.mode");
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || DEFAULT_WHATSAPP_VERIFY_TOKEN;
 
-  if (mode === "subscribe" && token && token === process.env.WHATSAPP_VERIFY_TOKEN && challenge) {
-    return new Response(challenge, { status: 200 });
+  if (mode === "subscribe" && token === verifyToken) {
+    return new Response(challenge ?? "", { status: 200 });
   }
 
   return new Response("Forbidden", { status: 403 });
