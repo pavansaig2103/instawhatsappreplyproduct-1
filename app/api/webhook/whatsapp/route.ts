@@ -40,9 +40,9 @@ export async function GET(request: Request) {
   const mode = url.searchParams.get("hub.mode");
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
-  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || DEFAULT_WHATSAPP_VERIFY_TOKEN;
+  const validTokens = new Set([process.env.WHATSAPP_VERIFY_TOKEN, DEFAULT_WHATSAPP_VERIFY_TOKEN].filter(Boolean));
 
-  if (mode === "subscribe" && token === verifyToken) {
+  if (mode === "subscribe" && token && validTokens.has(token)) {
     return new Response(challenge ?? "", { status: 200 });
   }
 
