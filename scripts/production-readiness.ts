@@ -32,6 +32,21 @@ async function main() {
       label: "AUTH_SECRET",
       ok: Boolean(process.env.AUTH_SECRET),
       detail: process.env.AUTH_SECRET ? "Configured" : "Missing; required for production"
+    },
+    {
+      label: "NEXT_PUBLIC_APP_URL",
+      ok: Boolean(process.env.NEXT_PUBLIC_APP_URL),
+      detail: process.env.NEXT_PUBLIC_APP_URL ? "Configured" : "Missing; required for Meta webhooks"
+    },
+    {
+      label: "INSTAGRAM_VERIFY_TOKEN",
+      ok: Boolean(process.env.INSTAGRAM_VERIFY_TOKEN),
+      detail: process.env.INSTAGRAM_VERIFY_TOKEN ? "Configured" : "Missing; required for Instagram webhook verification"
+    },
+    {
+      label: "WHATSAPP_VERIFY_TOKEN",
+      ok: Boolean(process.env.WHATSAPP_VERIFY_TOKEN),
+      detail: process.env.WHATSAPP_VERIFY_TOKEN ? "Configured" : "Missing; required for WhatsApp webhook verification"
     }
   ];
 

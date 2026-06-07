@@ -45,7 +45,7 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
   const externalMessageId = event.message?.mid;
   const eventType = event.message?.is_echo ? "MESSAGE_ECHO" : messageText ? "MESSAGE_TEXT" : "MESSAGE_IGNORED";
 
-  const existingProcessed = externalMessageId
+  const existingEvent = externalMessageId
     ? await prisma.channelWebhookEvent.findUnique({
         where: {
           channel_externalMessageId: {
@@ -56,7 +56,7 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
       })
     : null;
 
-  if (existingProcessed?.status === "PROCESSED") {
+  if (existingEvent) {
     await logChannelWebhookEvent({
       channel: Channel.INSTAGRAM,
       eventType,
@@ -64,7 +64,7 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
       externalUserId,
       payload,
       status: "IGNORED",
-      error: `Duplicate message already processed: ${externalMessageId}`
+      error: `Duplicate message already received: ${externalMessageId}`
     });
     return;
   }

@@ -13,7 +13,8 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "db:verify": "tsx scripts/verify-migration.ts",
-    "production:check": "tsx scripts/production-readiness.ts"
+    "production:check": "tsx scripts/production-readiness.ts",
+    "production:integration": "tsx scripts/production-integration-test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

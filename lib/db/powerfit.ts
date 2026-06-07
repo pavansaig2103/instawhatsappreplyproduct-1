@@ -111,6 +111,58 @@ export const DEMO_BUSINESSES = [
         answer: "Near RTC Bus Stand, Proddatur"
       }
     ]
+  },
+  {
+    slug: "aerocore",
+    name: "AEROCORE",
+    handle: "@aerocore",
+    category: "Digital Services",
+    website: "https://aerocore-webpage.vercel.app/",
+    settings: {
+      location: "Serving small and medium businesses online",
+      timings: "Available for enquiries every day",
+      services:
+        "Business Websites, School & Educational Websites, Restaurant & Hotel Websites, Clinic & Healthcare Websites, Gym & Fitness Websites, Jewelry Store Websites, Travel & Vehicle Rental Websites, InstaReply AI, WhatsApp Auto Reply, Lead Capture AI, FAQ AI Chatbot, Customer Support Automation",
+      pricingNotes: "Pricing depends on website, automation, chatbot, dashboard, and lead capture requirements",
+      staffNotificationPhone: "",
+      staffNotificationEmail: "pavansaig2406@gmail.com",
+      aiTone: "Professional, helpful, confident, and concise"
+    },
+    faqs: [
+      {
+        question: "What services do you provide?",
+        answer: "Websites, AI chatbots, lead capture systems, automation and dashboards."
+      },
+      {
+        question: "Do you create school websites?",
+        answer: "Yes."
+      },
+      {
+        question: "Do you create restaurant websites?",
+        answer: "Yes."
+      },
+      {
+        question: "Do you build AI chatbots?",
+        answer: "Yes."
+      },
+      {
+        question: "How can I contact AEROCORE?",
+        answer: "Through WhatsApp or the enquiry form."
+      },
+      {
+        question: "Do you build clinic websites?",
+        answer: "Yes, we build clinic websites with appointment enquiries, doctor profiles, and lead generation."
+      },
+      {
+        question: "Do you build WhatsApp automation?",
+        answer: "Yes, we build WhatsApp auto reply, lead capture, and customer support automation."
+      },
+      {
+        question: "What service categories does AEROCORE support?",
+        answer:
+          "Business, school, restaurant, hotel, clinic, gym, jewelry, travel, vehicle rental, AI chatbot, automation, lead capture, and dashboard solutions."
+      }
+    ]
   }
 ] as const;
 

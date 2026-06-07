@@ -70,7 +70,33 @@ function getGreetingReply(businessName: string) {
 function isLeadCaptureTrigger(text: string) {
   const normalized = normalizeText(text);
   const triggerPhrases = ["sign up", "contact me", "call me"];
-  const triggerWords = ["interested", "join", "trial", "book", "appointment", "contact", "call", "signup", "membership", "trainer"];
+  const triggerWords = [
+    "interested",
+    "join",
+    "trial",
+    "book",
+    "appointment",
+    "contact",
+    "call",
+    "signup",
+    "membership",
+    "trainer",
+    "website",
+    "websites",
+    "chatbot",
+    "chatbots",
+    "automation",
+    "dashboard",
+    "lead",
+    "enquiry",
+    "restaurant",
+    "clinic",
+    "school",
+    "hotel",
+    "jewelry",
+    "travel",
+    "rental"
+  ];
 
   return (
     triggerPhrases.some((phrase) => normalized.includes(phrase)) ||
@@ -209,7 +235,21 @@ function isValidServiceInterest(text: string) {
     "root",
     "canal",
     "consultation",
-    "appointment"
+    "appointment",
+    "website",
+    "websites",
+    "chatbot",
+    "chatbots",
+    "automation",
+    "dashboard",
+    "landing",
+    "restaurant",
+    "clinic",
+    "school",
+    "hotel",
+    "jewelry",
+    "travel",
+    "rental"
   ]);
 
   return (

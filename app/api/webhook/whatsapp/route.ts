@@ -57,7 +57,7 @@ async function processWhatsAppMessage(input: {
   const externalMessageId = input.message.id;
   const eventType = messageText ? "MESSAGE_TEXT" : "MESSAGE_IGNORED";
 
-  const existingProcessed = externalMessageId
+  const existingEvent = externalMessageId
     ? await prisma.channelWebhookEvent.findUnique({
         where: {
           channel_externalMessageId: {
@@ -68,7 +68,7 @@ async function processWhatsAppMessage(input: {
       })
     : null;
 
-  if (existingProcessed?.status === "PROCESSED") {
+  if (existingEvent) {
     await logChannelWebhookEvent({
       channel: Channel.WHATSAPP,
       eventType,
@@ -76,7 +76,7 @@ async function processWhatsAppMessage(input: {
       externalUserId,
       payload: input.payload,
       status: "IGNORED",
-      error: `Duplicate message already processed: ${externalMessageId}`
+      error: `Duplicate message already received: ${externalMessageId}`
     });
     return;
   }

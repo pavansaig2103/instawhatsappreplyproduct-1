@@ -21,7 +21,7 @@ export type AppHealth = {
   };
 };
 
-const ownerEmails = ["owner@powerfit.com", "owner@glowstudio.com", "owner@brightsmile.com"];
+const ownerEmails = ["owner@powerfit.com", "owner@glowstudio.com", "owner@brightsmile.com", "owner@aerocore.com"];
 
 export async function checkDatabaseConnection() {
   try {

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { hashPassword } from "@/lib/auth/password";
+import { Channel, Direction, LeadStatus, NotificationStatus, ReplyType } from "@/lib/db/enums";
 import { DEMO_BUSINESSES, getDemoBusiness } from "@/lib/db/powerfit";
 
 const STALE_DEMO_FAQ_QUESTIONS = [
@@ -67,7 +68,141 @@ function demoOwnerEmail(demoBusiness: (typeof DEMO_BUSINESSES)[number]) {
     return "owner@glowstudio.com";
   }
 
+  if (demoBusiness.slug === "aerocore") {
+    return "owner@aerocore.com";
+  }
+
   return "owner@brightsmile.com";
+}
+
+async function syncAeroCoreSampleData(businessId: string) {
+  const samples = [
+    {
+      handle: "aerocore_demo_instagram",
+      channel: Channel.INSTAGRAM,
+      name: "Ravi Kumar",
+      phone: "9876543210",
+      serviceInterest: "Clinic website with appointment enquiries",
+      inbound: "I need a website for my clinic",
+      outbound: "Great. May I know your name?"
+    },
+    {
+      handle: "aerocore_demo_whatsapp",
+      channel: Channel.WHATSAPP,
+      name: "Priya Sharma",
+      phone: "9876543211",
+      serviceInterest: "Restaurant website with WhatsApp booking integration",
+      inbound: "I own a restaurant",
+      outbound: "Awesome. We build restaurant websites and booking systems. May I know your name?"
+    },
+    {
+      handle: "aerocore_demo_ai",
+      channel: Channel.INSTAGRAM,
+      name: "Arjun Reddy",
+      phone: "9876543212",
+      serviceInterest: "AI chatbot and lead capture automation",
+      inbound: "I need an AI chatbot",
+      outbound: "We can help with AI chatbots and automation. May I know your name?"
+    }
+  ];
+
+  for (const sample of samples) {
+    const lead = await prisma.lead.upsert({
+      where: {
+        businessId_instagramHandle: {
+          businessId,
+          instagramHandle: sample.handle
+        }
+      },
+      update: {
+        name: sample.name,
+        phone: sample.phone,
+        serviceInterest: sample.serviceInterest,
+        intent: sample.serviceInterest,
+        status: LeadStatus.HOT,
+        lastSeenAt: new Date()
+      },
+      create: {
+        businessId,
+        name: sample.name,
+        phone: sample.phone,
+        serviceInterest: sample.serviceInterest,
+        instagramHandle: sample.handle,
+        intent: sample.serviceInterest,
+        status: LeadStatus.HOT
+      }
+    });
+    const existingConversation = await prisma.conversation.findFirst({
+      where: {
+        businessId,
+        instagramHandle: sample.handle,
+        channel: sample.channel
+      }
+    });
+
+    if (!existingConversation) {
+      await prisma.conversation.create({
+        data: {
+          businessId,
+          leadId: lead.id,
+          contactName: sample.name,
+          instagramHandle: sample.handle,
+          channel: sample.channel,
+          leadState: "COMPLETE",
+          messages: {
+            create: [
+              {
+                direction: Direction.INBOUND,
+                channel: sample.channel,
+                replyType: ReplyType.LEAD_CAPTURE,
+                content: sample.inbound
+              },
+              {
+                direction: Direction.OUTBOUND,
+                channel: sample.channel,
+                replyType: ReplyType.LEAD_CAPTURE,
+                content: sample.outbound
+              }
+            ]
+          }
+        }
+      });
+    }
+
+    await prisma.notification.upsert({
+      where: {
+        leadId_title: {
+          leadId: lead.id,
+          title: "🔥 New HOT Lead"
+        }
+      },
+      update: {
+        channel: sample.channel,
+        status: NotificationStatus.SENT,
+        message: [
+          "Business: AEROCORE",
+          `Lead: ${sample.name}`,
+          `Phone: ${sample.phone}`,
+          `Service interest: ${sample.serviceInterest}`,
+          `Source channel: ${sample.channel === Channel.WHATSAPP ? "WhatsApp" : "Instagram"}`
+        ].join("\n")
+      },
+      create: {
+        businessId,
+        leadId: lead.id,
+        channel: sample.channel,
+        title: "🔥 New HOT Lead",
+        status: NotificationStatus.SENT,
+        message: [
+          "Business: AEROCORE",
+          `Lead: ${sample.name}`,
+          `Phone: ${sample.phone}`,
+          `Service interest: ${sample.serviceInterest}`,
+          `Source channel: ${sample.channel === Channel.WHATSAPP ? "WhatsApp" : "Instagram"}`
+        ].join("\n")
+      }
+    });
+  }
 }
 
 async function syncMissingDemoSettings(businessId: string, demoBusiness: (typeof DEMO_BUSINESSES)[number]) {
@@ -128,6 +263,10 @@ export async function ensureDemoBusinesses() {
       }
     });
     await syncDemoFaqs(business.id, [...demoBusiness.faqs]);
+
+    if (demoBusiness.slug === "aerocore") {
+      await syncAeroCoreSampleData(business.id);
+    }
   }
 }
 
