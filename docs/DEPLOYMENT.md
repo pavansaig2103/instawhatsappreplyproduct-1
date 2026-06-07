@@ -27,7 +27,9 @@ DATABASE_URL=""
 DIRECT_URL=""
 GROQ_API_KEY=""
 AUTH_SECRET=""
+NEXT_PUBLIC_APP_URL=""
 INSTAGRAM_VERIFY_TOKEN=""
+WHATSAPP_VERIFY_TOKEN=""
 ```
 
 Notes:
@@ -36,7 +38,9 @@ Notes:
 - `DIRECT_URL` should be the direct Supabase URL.
 - `GROQ_API_KEY` enables Groq AI fallback.
 - `AUTH_SECRET` must be a long random string in production.
+- `NEXT_PUBLIC_APP_URL` must be your production URL, without a trailing slash.
 - `INSTAGRAM_VERIFY_TOKEN` is used by Meta to verify the Instagram webhook.
+- `WHATSAPP_VERIFY_TOKEN` is used by Meta to verify the WhatsApp webhook.
 
 Generate an auth secret with:
 
@@ -80,7 +84,9 @@ Expected seeded owner users:
    - `DIRECT_URL`
    - `GROQ_API_KEY`
    - `AUTH_SECRET`
+   - `NEXT_PUBLIC_APP_URL`
    - `INSTAGRAM_VERIFY_TOKEN`
+   - `WHATSAPP_VERIFY_TOKEN`
 3. Set the build command:
 
 ```bash

@@ -2,26 +2,34 @@ import { NextResponse } from "next/server";
 import { Channel } from "@/lib/db/enums";
 import { prisma } from "@/lib/db/prisma";
 import { logChannelSendAttempt, logChannelWebhookEvent, updateChannelWebhookEvent } from "@/lib/integrations/channelDiagnostics";
-import { sendInstagramMessage } from "@/lib/integrations/metaChannels";
+import { sendWhatsAppMessage } from "@/lib/integrations/metaChannels";
 import { processInboundMessage } from "@/lib/messages/processInboundMessage";
 
-type InstagramMessagingEvent = {
-  sender?: { id?: string };
-  recipient?: { id?: string };
-  timestamp?: number;
-  message?: {
-    mid?: string;
-    text?: string;
-    is_echo?: boolean;
+type WhatsAppMessage = {
+  from?: string;
+  id?: string;
+  timestamp?: string;
+  text?: {
+    body?: string;
   };
+  type?: string;
 };
 
-type InstagramWebhookPayload = {
+type WhatsAppValue = {
+  metadata?: {
+    phone_number_id?: string;
+  };
+  messages?: WhatsAppMessage[];
+};
+
+type WhatsAppWebhookPayload = {
   object?: string;
   entry?: Array<{
     id?: string;
-    time?: number;
-    messaging?: InstagramMessagingEvent[];
+    changes?: Array<{
+      field?: string;
+      value?: WhatsAppValue;
+    }>;
   }>;
 };
 
@@ -31,25 +39,29 @@ export async function GET(request: Request) {
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  if (mode === "subscribe" && token && token === process.env.INSTAGRAM_VERIFY_TOKEN && challenge) {
+  if (mode === "subscribe" && token && token === process.env.WHATSAPP_VERIFY_TOKEN && challenge) {
     return new Response(challenge, { status: 200 });
   }
 
   return new Response("Forbidden", { status: 403 });
 }
 
-async function processInstagramEvent(event: InstagramMessagingEvent, payload: InstagramWebhookPayload) {
-  const externalAccountId = event.recipient?.id;
-  const externalUserId = event.sender?.id;
-  const messageText = event.message?.text?.trim();
-  const externalMessageId = event.message?.mid;
-  const eventType = event.message?.is_echo ? "MESSAGE_ECHO" : messageText ? "MESSAGE_TEXT" : "MESSAGE_IGNORED";
+async function processWhatsAppMessage(input: {
+  phoneNumberId?: string;
+  message: WhatsAppMessage;
+  payload: WhatsAppWebhookPayload;
+}) {
+  const externalAccountId = input.phoneNumberId;
+  const externalUserId = input.message.from;
+  const messageText = input.message.text?.body?.trim();
+  const externalMessageId = input.message.id;
+  const eventType = messageText ? "MESSAGE_TEXT" : "MESSAGE_IGNORED";
 
   const existingProcessed = externalMessageId
     ? await prisma.channelWebhookEvent.findUnique({
         where: {
           channel_externalMessageId: {
-            channel: Channel.INSTAGRAM,
+            channel: Channel.WHATSAPP,
             externalMessageId
           }
         }
@@ -58,11 +70,11 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
 
   if (existingProcessed?.status === "PROCESSED") {
     await logChannelWebhookEvent({
-      channel: Channel.INSTAGRAM,
+      channel: Channel.WHATSAPP,
       eventType,
       externalAccountId,
       externalUserId,
-      payload,
+      payload: input.payload,
       status: "IGNORED",
       error: `Duplicate message already processed: ${externalMessageId}`
     });
@@ -70,18 +82,18 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
   }
 
   const rawEvent = await logChannelWebhookEvent({
-    channel: Channel.INSTAGRAM,
+    channel: Channel.WHATSAPP,
     eventType,
     externalAccountId,
     externalUserId,
     externalMessageId,
-    payload,
+    payload: input.payload,
     status: "RECEIVED"
   });
 
-  console.log(`[Instagram webhook] Event type: ${eventType}`);
+  console.log(`[WhatsApp webhook] Event type: ${eventType}`);
 
-  if (!externalAccountId || !externalUserId || !messageText || event.message?.is_echo) {
+  if (!externalAccountId || !externalUserId || !messageText) {
     await updateChannelWebhookEvent(rawEvent.id, {
       status: "IGNORED",
       error: !messageText ? "No text message found" : null
@@ -92,7 +104,7 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
   const connection = await prisma.channelConnection.findUnique({
     where: {
       channel_externalAccountId: {
-        channel: Channel.INSTAGRAM,
+        channel: Channel.WHATSAPP,
         externalAccountId
       }
     }
@@ -101,7 +113,7 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
   if (!connection) {
     await updateChannelWebhookEvent(rawEvent.id, {
       status: "IGNORED",
-      error: `No Instagram connection found for account ${externalAccountId}`
+      error: `No WhatsApp connection found for phone number ${externalAccountId}`
     });
     return;
   }
@@ -114,15 +126,16 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
 
     const result = await processInboundMessage({
       businessId: connection.businessId,
-      channel: Channel.INSTAGRAM,
+      channel: Channel.WHATSAPP,
       externalUserId,
       externalMessageId,
       messageText,
-      contactName: "Instagram Lead"
+      contactName: "WhatsApp Lead"
     });
 
     try {
-      const response = await sendInstagramMessage({
+      const response = await sendWhatsAppMessage({
+        phoneNumberId: externalAccountId,
         recipientId: externalUserId,
         text: result.replyText,
         accessToken: connection.accessToken
@@ -130,7 +143,7 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
 
       await logChannelSendAttempt({
         businessId: connection.businessId,
-        channel: Channel.INSTAGRAM,
+        channel: Channel.WHATSAPP,
         recipientId: externalUserId,
         messageText: result.replyText,
         status: "SUCCESS",
@@ -142,11 +155,11 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
         status: "PROCESSED"
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Instagram send failed";
+      const message = error instanceof Error ? error.message : "WhatsApp send failed";
 
       await logChannelSendAttempt({
         businessId: connection.businessId,
-        channel: Channel.INSTAGRAM,
+        channel: Channel.WHATSAPP,
         recipientId: externalUserId,
         messageText: result.replyText,
         status: "FAILED",
@@ -163,31 +176,42 @@ async function processInstagramEvent(event: InstagramMessagingEvent, payload: In
     await updateChannelWebhookEvent(rawEvent.id, {
       businessId: connection.businessId,
       status: "FAILED",
-      error: error instanceof Error ? error.message : "Instagram processing failed"
+      error: error instanceof Error ? error.message : "WhatsApp processing failed"
     });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.json()) as InstagramWebhookPayload;
-    const events = payload.entry?.flatMap((entry) => entry.messaging ?? []) ?? [];
+    const payload = (await request.json()) as WhatsAppWebhookPayload;
+    const messages =
+      payload.entry?.flatMap((entry) =>
+        entry.changes?.flatMap((change) =>
+          (change.value?.messages ?? []).map((message) => ({
+            phoneNumberId: change.value?.metadata?.phone_number_id,
+            message
+          }))
+        ) ?? []
+      ) ?? [];
 
-    for (const event of events) {
-      await processInstagramEvent(event, payload);
+    for (const item of messages) {
+      await processWhatsAppMessage({
+        ...item,
+        payload
+      });
     }
 
-    if (!events.length) {
+    if (!messages.length) {
       await logChannelWebhookEvent({
-        channel: Channel.INSTAGRAM,
-        eventType: payload.object || "instagram_webhook",
+        channel: Channel.WHATSAPP,
+        eventType: payload.object || "whatsapp_webhook",
         payload,
         status: "IGNORED",
-        error: "No messaging events found"
+        error: "No text messages found"
       });
     }
   } catch (error) {
-    console.error("[Instagram webhook] Processing failed", error instanceof Error ? error.message : error);
+    console.error("[WhatsApp webhook] Processing failed", error instanceof Error ? error.message : error);
   }
 
   return NextResponse.json({ ok: true });

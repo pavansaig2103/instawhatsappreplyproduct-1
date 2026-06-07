@@ -37,14 +37,36 @@ export async function checkDatabaseConnection() {
 }
 
 export async function checkCoreTables() {
-  const tableNames = ["Business", "User", "FAQ", "Lead", "Conversation", "Message", "Notification"];
+  const tableNames = [
+    "Business",
+    "User",
+    "FAQ",
+    "Lead",
+    "Conversation",
+    "Message",
+    "Notification",
+    "ChannelConnection",
+    "ChannelWebhookEvent",
+    "ChannelSendAttempt"
+  ];
 
   try {
     const tables = await prisma.$queryRaw<Array<{ table_name: string }>>`
       SELECT table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-        AND table_name IN ('Business', 'User', 'FAQ', 'Lead', 'Conversation', 'Message', 'Notification')
+        AND table_name IN (
+          'Business',
+          'User',
+          'FAQ',
+          'Lead',
+          'Conversation',
+          'Message',
+          'Notification',
+          'ChannelConnection',
+          'ChannelWebhookEvent',
+          'ChannelSendAttempt'
+        )
     `;
     const existingTables = new Set(tables.map((table) => table.table_name));
     const missingTables = tableNames.filter((table) => !existingTables.has(table));

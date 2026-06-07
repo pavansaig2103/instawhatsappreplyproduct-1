@@ -3,10 +3,29 @@ import { BusinessSettingsForm } from "@/components/BusinessSettingsForm";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { requireCurrentUser } from "@/lib/auth/session";
+import { Channel } from "@/lib/db/enums";
+import { prisma } from "@/lib/db/prisma";
+
+function serializeConnection(connection?: {
+  externalAccountId: string;
+  externalBusinessAccountId: string;
+  accessToken: string;
+  isConnected: boolean;
+} | null) {
+  return {
+    externalAccountId: connection?.externalAccountId ?? "",
+    externalBusinessAccountId: connection?.externalBusinessAccountId ?? "",
+    tokenExists: Boolean(connection?.accessToken),
+    isConnected: Boolean(connection?.isConnected)
+  };
+}
 
 export default async function SettingsPage() {
   const user = await requireCurrentUser();
   const business = user.business;
+  const connections = await prisma.channelConnection.findMany({
+    where: { businessId: user.businessId }
+  });
 
   return (
     <div className="space-y-6">
@@ -27,10 +46,11 @@ export default async function SettingsPage() {
           pricingNotes: business.pricingNotes,
           staffNotificationPhone: business.staffNotificationPhone,
           staffNotificationEmail: business.staffNotificationEmail,
-          aiTone: business.aiTone,
-          instagramPageId: business.instagramPageId,
-          instagramAccessToken: business.instagramAccessToken,
-          instagramConnected: business.instagramConnected
+          aiTone: business.aiTone
+        }}
+        channelConnections={{
+          INSTAGRAM: serializeConnection(connections.find((connection) => connection.channel === Channel.INSTAGRAM)),
+          WHATSAPP: serializeConnection(connections.find((connection) => connection.channel === Channel.WHATSAPP))
         }}
       />
 
@@ -42,7 +62,7 @@ export default async function SettingsPage() {
           <div>
             <h2 className="font-semibold text-white">Integration status</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Instagram webhooks can be connected from this page. WhatsApp remains a demo channel for now.
+              Instagram and WhatsApp webhooks can be connected from this page.
             </p>
           </div>
         </div>

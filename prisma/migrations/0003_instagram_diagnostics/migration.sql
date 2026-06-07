@@ -1,4 +1,4 @@
-CREATE TABLE "InstagramWebhookEvent" (
+CREATE TABLE IF NOT EXISTS "InstagramWebhookEvent" (
   "id" TEXT NOT NULL,
   "businessId" TEXT,
   "eventType" TEXT NOT NULL,
@@ -10,4 +10,11 @@ CREATE TABLE "InstagramWebhookEvent" (
   CONSTRAINT "InstagramWebhookEvent_pkey" PRIMARY KEY ("id")
 );
 
-ALTER TABLE "InstagramWebhookEvent" ADD CONSTRAINT "InstagramWebhookEvent_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'InstagramWebhookEvent_businessId_fkey'
+  ) THEN
+    ALTER TABLE "InstagramWebhookEvent" ADD CONSTRAINT "InstagramWebhookEvent_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;

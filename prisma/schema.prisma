@@ -40,7 +40,9 @@ model Business {
   conversations   Conversation[]
   leads           Lead[]
   notifications   Notification[]
-  instagramWebhookEvents InstagramWebhookEvent[]
+  channelConnections ChannelConnection[]
+  channelWebhookEvents ChannelWebhookEvent[]
+  channelSendAttempts ChannelSendAttempt[]
 }
 
 model User {
@@ -130,13 +132,48 @@ model Notification {
   @@unique([leadId, title])
 }
 
-model InstagramWebhookEvent {
-  id          String   @id @default(cuid())
-  businessId  String?
-  eventType   String
-  payloadJson String
-  status      String
-  error       String?
-  createdAt   DateTime @default(now())
-  business    Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+model ChannelConnection {
+  id                        String   @id @default(cuid())
+  businessId                String
+  channel                   String
+  externalAccountId         String
+  externalBusinessAccountId String   @default("")
+  accessToken               String
+  isConnected               Boolean  @default(false)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  business                  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@unique([businessId, channel])
+  @@unique([channel, externalAccountId])
+}
+
+model ChannelWebhookEvent {
+  id                String   @id @default(cuid())
+  businessId        String?
+  channel           String
+  eventType         String
+  externalAccountId String?
+  externalUserId    String?
+  externalMessageId String?
+  payloadJson       String
+  status            String
+  error             String?
+  createdAt         DateTime @default(now())
+  business          Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+
+  @@unique([channel, externalMessageId])
+}
+
+model ChannelSendAttempt {
+  id           String   @id @default(cuid())
+  businessId   String
+  channel      String
+  recipientId  String
+  messageText  String
+  status       String
+  responseJson String?
+  error        String?
+  createdAt    DateTime @default(now())
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }

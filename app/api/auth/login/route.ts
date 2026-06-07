@@ -5,10 +5,20 @@ import { ensureDemoBusinesses } from "@/lib/db/business";
 import { prisma } from "@/lib/db/prisma";
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as {
+  let body: {
     email?: string;
     password?: string;
   };
+
+  try {
+    body = (await request.json()) as {
+      email?: string;
+      password?: string;
+    };
+  } catch {
+    return NextResponse.json({ error: "Invalid login request." }, { status: 400 });
+  }
+
   const email = body.email?.trim().toLowerCase();
   const password = body.password ?? "";
 

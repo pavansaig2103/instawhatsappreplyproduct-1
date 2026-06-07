@@ -14,9 +14,6 @@ type BusinessSettingsPayload = {
   staffNotificationPhone: string;
   staffNotificationEmail: string;
   aiTone: string;
-  instagramPageId: string;
-  instagramAccessToken: string;
-  instagramConnected: boolean;
 };
 
 function serializeBusiness(business: BusinessSettingsPayload) {
@@ -31,10 +28,7 @@ function serializeBusiness(business: BusinessSettingsPayload) {
     pricingNotes: business.pricingNotes,
     staffNotificationPhone: business.staffNotificationPhone,
     staffNotificationEmail: business.staffNotificationEmail,
-    aiTone: business.aiTone,
-    instagramPageId: business.instagramPageId,
-    instagramAccessToken: business.instagramAccessToken,
-    instagramConnected: business.instagramConnected
+    aiTone: business.aiTone
   };
 }
 
@@ -65,8 +59,6 @@ export async function PATCH(request: Request) {
     staffNotificationPhone?: string;
     staffNotificationEmail?: string;
     aiTone?: string;
-    instagramPageId?: string;
-    instagramAccessToken?: string;
   };
 
   if (!body.name?.trim() || !body.businessType?.trim()) {
@@ -84,10 +76,7 @@ export async function PATCH(request: Request) {
       pricingNotes: body.pricingNotes?.trim() ?? "",
       staffNotificationPhone: body.staffNotificationPhone?.trim() ?? "",
       staffNotificationEmail: body.staffNotificationEmail?.trim() ?? "",
-      aiTone: body.aiTone?.trim() || "Friendly and concise",
-      instagramPageId: body.instagramPageId?.trim() ?? "",
-      instagramAccessToken: body.instagramAccessToken?.trim() ?? "",
-      instagramConnected: Boolean(body.instagramPageId?.trim() && body.instagramAccessToken?.trim())
+      aiTone: body.aiTone?.trim() || "Friendly and concise"
     }
   });
 
