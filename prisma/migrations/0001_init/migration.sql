@@ -103,6 +103,18 @@ CREATE TABLE "Notification" (
   CONSTRAINT "Notification_pkey" PRIMARY KEY ("id")
 );
 
+CREATE TABLE "InstagramWebhookEvent" (
+  "id" TEXT NOT NULL,
+  "businessId" TEXT,
+  "eventType" TEXT NOT NULL,
+  "payloadJson" TEXT NOT NULL,
+  "status" TEXT NOT NULL,
+  "error" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT "InstagramWebhookEvent_pkey" PRIMARY KEY ("id")
+);
+
 CREATE UNIQUE INDEX "Business_instagramHandle_key" ON "Business"("instagramHandle");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "Lead_businessId_instagramHandle_key" ON "Lead"("businessId", "instagramHandle");
@@ -116,3 +128,4 @@ ALTER TABLE "Message" ADD CONSTRAINT "Message_conversationId_fkey" FOREIGN KEY (
 ALTER TABLE "Lead" ADD CONSTRAINT "Lead_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_leadId_fkey" FOREIGN KEY ("leadId") REFERENCES "Lead"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "InstagramWebhookEvent" ADD CONSTRAINT "InstagramWebhookEvent_businessId_fkey" FOREIGN KEY ("businessId") REFERENCES "Business"("id") ON DELETE SET NULL ON UPDATE CASCADE;
